@@ -7,12 +7,15 @@ export default async function ffmpeg(args) {
       var proc = spawn(CMD_PATH, args);
       proc.stderr.setEncoding("utf8")
 
-      // proc.stdout.on('data', function (data) { });
-      // proc.stderr.on('data', (err) => {
-      //    console.error("ffmpeg error", "!", "\n" + err)
-      //    reject();
-      // });
+      const log = [];
 
-      proc.on('close', resolve);
+      proc.stderr.on('data', (line) => {
+         log.push(line);
+      });
+
+      proc.on('close', (err) => {
+         if (!err) resolve(log);
+         if (err) reject(log);
+      });
    });
 }

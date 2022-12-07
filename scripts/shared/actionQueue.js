@@ -1,7 +1,9 @@
 import { cpuUsage } from "./utils.js";
 
-const CPU_TARGET = 1;
-const TIME_MAX = 10000;
+const CPU_TARGET = process.env.CPU_TARGET ? Number.parseFloat(process.env.CPU_TARGET) : 0.5;
+const TIME_MAX = process.env.TIME_MAX ? Number.parseFloat(process.env.TIME_MAX) : 10000;
+
+console.log({ CPU_TARGET, TIME_MAX });
 
 export default async function RunQueue(queue, executeAction, actionDone) {
    const running_set = new Set();
@@ -83,14 +85,14 @@ export default async function RunQueue(queue, executeAction, actionDone) {
 
       prev_time = Date.now();
       // delay = 0;
+      let start_time = Date.now();
+
       while (queue.length && running_set.size < running_max) {
          const action = queue.pop();
          running_set_add(action);
 
          // setTimeout(() => {
          log_vitals();
-
-         let start_time = Date.now();
 
          executeAction(action, count - queue.length, count)
             .then(async (success) => {
@@ -102,6 +104,7 @@ export default async function RunQueue(queue, executeAction, actionDone) {
                   console.log("\n!!!took too long!!!", delta, "/", TIME_MAX, "\n");
                   running_inc = 1;
                   running_max -= 1;
+                  start_time = Date.now();
                }
                // else
                //    console.log("\n---time is fine---", delta, "/", TIME_MAX, "\n");

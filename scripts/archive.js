@@ -2,8 +2,8 @@ import fs from 'fs';
 import PATH from 'path';
 
 import Crawl, { checkProfile } from "./crawl.js";
-import Import from "./import.js";
-import { ask, formatBytes, exists, ensureDir } from "./utils.js";
+import Import from "./shared/import.js";
+import { ask, formatBytes, exists, ensureDir } from "./shared/utils.js";
 
 import sizeOf from 'image-size';
 import { promisify } from 'util'

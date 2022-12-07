@@ -7,7 +7,8 @@ import metadata from "./metadata.js";
 import RunQueue from "./actionQueue.js";
 import { formatBytes, ensureDir, exists, ask } from "./utils.js";
 
-const LOG = true;
+const LOG = process.env.LOG_IMPORT === "true";
+console.log({ LOG_IMPORT: LOG });
 
 async function copyItem(source_path, target_path) {
    const source_filename_with_extension = PATH.basename(source_path);
@@ -17,13 +18,31 @@ async function copyItem(source_path, target_path) {
    LOG && console.log("<< copy:", target_filename_with_extension,);
 }
 
+async function renameItem(source_path, target_path) {
+   const target_extension = PATH.extname(target_path);
+   const target_directory = PATH.dirname(target_path);
+   const target_filename = PATH.basename(target_path, target_extension);
+
+   let i = 0;
+   while (await exists(target_path))
+      target_path = PATH.join(target_directory, `${target_filename} (${++i})${target_extension}`);
+
+   const source_filename_with_extension = PATH.basename(source_path);
+   const target_filename_with_extension = PATH.basename(target_path);
+
+   LOG && console.log(">> rename:", source_filename_with_extension, ">", target_filename_with_extension);
+   await fs.promises.rename(source_path, target_path);
+   LOG && console.log("<< rename:", source_filename_with_extension, ">", target_filename_with_extension);
+}
+
 async function ffmpegItem(source_path, target_path, args) {
    const source_filename_with_extension = PATH.basename(source_path);
    const target_filename_with_extension = PATH.basename(target_path);
    LOG && console.log(">> ffmpeg", args.join(" "));
    try {
       await ffmpeg(args);
-   } catch {
+   } catch (log) {
+      console.log("\n!! ffmpeg error !! log:", "\n" + log.join(""));
       return false;
    }
    LOG && console.log("<< ffmpeg:", source_filename_with_extension, "->", target_filename_with_extension);
@@ -47,6 +66,9 @@ async function executeAction(item, target_path, action) {
       switch (kind) {
          case "copy":
             await copyItem(item.path, target_path);
+            return true;
+         case "rename":
+            await renameItem(item.path, target_path);
             return true;
          case "ffmpeg":
             const { get_ffmpeg_args } = action;

@@ -2,14 +2,14 @@ import PATH from 'path';
 import fs from 'fs';
 
 import Crawl, { generateItem } from "./crawl.js";
-import Import from "./import.js";
-import { ask, formatBytes, exists, ensureDir } from "./utils.js";
+import Import from "./shared/import.js";
+import { ask, formatBytes, exists, ensureDir } from "./shared/utils.js";
 
 await Index();
 console.log("INDEXING DONE!")
 
 async function Index() {
-   const index_path = "src\\assets\\archive";
+   const index_path = "public\\archive";
 
    const meta_sizes = [
       { width: 2, height: 2 },
@@ -23,7 +23,6 @@ async function Index() {
       { width: 512, height: 512 },
    ]
    const indexed_items = await runIndex(index_path, meta_sizes);
-   // console.log({ indexed_items }, "\n");
    console.log("len:", indexed_items.length);
 
    await saveToJSON("src\\compiled\\media.json", indexed_items);
@@ -57,7 +56,7 @@ async function runIndex(path, meta_sizes) {
    items.sort((i1, i2) => weight(i2) - weight(i1))
 
    const srced_items = items.map(item => {
-      item.src = item.path; //.replace("src\\", "\\");
+      item.src = item.path.replace("public\\", "\\");
       return item;
    });
 
@@ -69,10 +68,9 @@ async function runIndex(path, meta_sizes) {
             if (!await exists(mipmap_path))
                return null;
             // return generateItem(mipmap_path);
-            const mipmap_path_src = mipmap_path; //.replace("src\\", "\\");
+            const mipmap_path_src = mipmap_path.replace("public\\", "\\");
             return { width, height, src: mipmap_path_src };
          })
-            .concat({ width: 1080, height: 1080, src: item.src })
       )).filter(i => i != null);
 
       item.mipmaps = mipmaps;

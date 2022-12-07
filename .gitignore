@@ -4,6 +4,6 @@ dist
 .env
 .env.production
 
-src/assets/archive
+public/archive
 src/compiled
 content
