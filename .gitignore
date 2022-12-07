@@ -1,0 +1,9 @@
+node_modules
+dist
+
+.env
+.env.production
+
+src/assets/archive
+src/compiled
+content
