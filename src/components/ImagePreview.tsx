@@ -1,4 +1,4 @@
-import { createEffect, createRenderEffect, createResource, createSignal, onCleanup, untrack } from "solid-js";
+import { createEffect, createRenderEffect, createResource, createSignal, onCleanup, Show, untrack } from "solid-js";
 import { getImage, cancelImage } from "../controllers/imageLoader";
 
 // window.oncontextmenu = function (event) {
@@ -33,18 +33,21 @@ const ImagePreview = (props: ImagePreviewProps) => {
    const [hovering, set_hovering] = createSignal(false);
    const [loading, set_loading] = createSignal(false);
    const [appear_ended, set_appear_ended] = createSignal(false);
+   // const [loaded_before, set_loaded_before] = createSignal(false);
 
-   const alway_show = () => false; //props.cols() == 1;
-   const should_appear = () => !(image().cached || loaded_before)
+   const always_show = () => false; //props.cols() == 1;
+   const should_appear = () => !(image()?.cached || loaded_before)
    const should_appear_animation = () => props.cols() > 1;
    const appear_animation = () => !should_appear() ? ""
-      : should_appear_animation() ? "scale-fade-in" : "fade-in"
+      : should_appear_animation() ? "fade-in" : "fade-in"
 
    const transform = (() => `translate(${props.item_x()}px, ${props.item_y()}px)`);
 
-   const mipmap = () => props.mipmaps.at(appear_ended()
-      ? mipmap_index()
-      : mipmap_index() - 1
+   const mipmap = () => props.mipmaps.at(
+      mipmap_index()
+      // appear_ended()
+      //    ? mipmap_index()
+      //    : mipmap_index() - 1
    );
 
    const src = () => mipmap()?.src ?? props.src;
@@ -86,54 +89,94 @@ const ImagePreview = (props: ImagePreviewProps) => {
       set_mipmap_index(new_mipmap_index);
    });
 
-
    let loaded_before = false;
-   createRenderEffect(() => {
+   createRenderEffect((prev_loading) => {
       // image.error && console.log("error!", src());
-      setTimeout(() => set_loading(image.loading))
 
-      if (!image.loading) {
-         const _appear_animation = untrack(appear_animation);
-         image().className = _appear_animation;
-         if (_appear_animation === "")
-            set_appear_ended(true);
-         image().onanimationend = () => set_appear_ended(true);
+      // setTimeout(() => set_loading(image.loading))
+      const loading = image.loading;
+      const _image = untrack(image);
 
-         // if (image().naturalWidth * 0.5 < props.item_size() || image().naturalHeight * 0.5 < props.item_size())
-         //    image().style.setProperty("image-rendering", "pixelated");
+      if (!loading && prev_loading) {
+         // const _loaded_before = untrack(loaded_before);
+
+         // _image.className = untrack(appear_animation);
+         _image.className = !should_appear_animation() || loaded_before || _image.cached ? "" : "fade-in";
+         set_appear_ended(loaded_before || _image.cached);
+
+         // if (!untrack(should_appear))
+         //    set_appear_ended(true);
+         // _image.onanimationend = () => set_appear_ended(true);
+
+         // if (_image.naturalWidth * 0.5 < props.item_size() || _image.naturalHeight * 0.5 < props.item_size())
+         //    _image.style.setProperty("image-rendering", "pixelated");
          // else
-         //    image().style.removeProperty("image-rendering");
-
-         if (image().src)
-            loaded_before = true;
+         //    _image.style.removeProperty("image-rendering");
+         // console.log(loaded_before);
       }
-   });
 
+      if (!loading) {
+         loaded_before = true;
+
+         _image.onanimationend = () => {
+            _image.className = "";
+            set_appear_ended(true);
+         }
+      }
+
+      return loading;
+   }, image.loading);
 
    return (
       <div
-         class={`image-preview-container`}
+         class={`image-preview-container ${!should_appear_animation() || appear_ended() ? "" : "fade-in"}`}
          style={{
             transform: transform(),
             width: props.item_size() + "px",
             "--item_index": props.item_index,
-            "background-color": props.background_color,
+            "background-color": "transparent",
+            "background-image": image.loading && `url("${props.mipmaps[0].src.replaceAll("\\", "/")}")`,
+            "background-size": "cover",
          }}
-         onpointerover={({ pointerType }) => pointerType === "mouse" && set_hovering(true)}
-         onpointerout={({ pointerType }) => pointerType === "mouse" && set_hovering(false)}
+         // onpointerover={({ pointerType }) => pointerType === "mouse" && set_hovering(true)}
+         // onpointerout={({ pointerType }) => pointerType === "mouse" && set_hovering(false)}
+         onmouseover={() => set_hovering(true)}
+         onmouseout={() => set_hovering(false)}
          tabindex={props.item_index.toString()}
-         onfocus={() => a_ref!.focus({ preventScroll: true })}
+         onfocus={() => a_ref?.focus({ preventScroll: true })}
       >
          {image()}
 
+         <Show when={hovering()}>
+            <ImagePreviewOverlay
+               hovering={hovering}
+               always_show={always_show}
+               a_ref={a_ref}
+               item_y={props.item_y}
+               item_x={props.item_x}
+               image={image}
+               dimensions={dimensions}
+               loading={loading}
+               appear_ended={appear_ended}
+               filename={props.filename}
+            />
+         </Show>
+         {/* <div class={`loading-animation ${loading() ? "active" : ""}`} /> */}
+      </div>
+   )
+}
+
+function ImagePreviewOverlay(props) {
+   return (
+      <>
          <div
-            class={`image-preview-overlay ${hovering() ? "show" : ""} ${alway_show() ? "always-show" : ""}`}
-            onblur={() => set_hovering(false)}
-            onfocus={() => set_hovering(true)}
+            class={`image-preview-overlay fade-in ${props.always_show() ? "always-show" : ""}`}
+         // onblur={() => set_hovering(false)}
+         // onfocus={() => set_hovering(true)}
          >
             <a
                class="label"
-               ref={a_ref}
+               ref={props.a_ref}
                style={{ position: "sticky", top: `calc(var(--header-height) - ${props.item_y()}px)`, left: 0 }}
             // href={`/media/${props.id}`}
             >
@@ -144,13 +187,12 @@ const ImagePreview = (props: ImagePreviewProps) => {
                class="label"
                style={{ position: "sticky", bottom: `${props.item_y()}px`, left: 0 }}
             >
-               {image()?.naturalWidth ?? dimensions().width}x{image()?.naturalHeight ?? dimensions().height} {appear_ended().toString()}
+               {props.image()?.naturalWidth ?? props.dimensions().width}x{props.image()?.naturalHeight ?? props.dimensions().height} {props.appear_ended().toString()}
             </span>
          </div>
 
-         <div class={`loading-animation ${loading() ? "active" : ""}`} />
-      </div>
-   )
+      </>
+   );
 }
 
 export default ImagePreview;

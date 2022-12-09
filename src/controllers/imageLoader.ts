@@ -3,11 +3,11 @@ import { getMedia, cancelMedia } from "./mediaLoader";
 export function getImage(src: string) {
   return getMedia<HTMLImageElement>({
     id: src,
-    construct: (onLoad, onError, onAbort) => {
+    construct: (onLoad) => {
       const image = new Image();
       image.onload = () => onLoad();
-      image.onerror = () => onError();
-      image.onabort = () => onAbort();
+      // image.onerror = () => onError();
+      // image.onabort = () => onAbort();
       image.src = src;
       return image;
     },

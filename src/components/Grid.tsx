@@ -46,16 +46,12 @@ const Grid = (props) => {
    const buffer_zone = window.innerHeight / 4;
    const buffer_top = createMemo(() => Math.round(Math.max(0, Math.min(untrack(grid_height),
       -grid_screen_y()
-
       + (buffer_scroll_vel() > 0 ? 0 : Math.min(buffer_scroll_vel() * 2, -buffer_zone))
-      // - buffer_zone
       // + item_size()
    ))));
    const buffer_bottom = createMemo(() => Math.round(Math.max(0, Math.min(untrack(grid_height),
       -grid_screen_y() + window.innerHeight
-
       + (buffer_scroll_vel() < 0 ? 0 : Math.max(buffer_scroll_vel() * 2, buffer_zone))
-      // + buffer_zone
       // - item_size()
    ))));
 
@@ -262,6 +258,7 @@ const Grid = (props) => {
          <div class="grid-header">
             {/* {item_size()} {el_width()}
             <span>{window.devicePixelRatio}</span> */}
+            {visible_items().length}
          </div>
 
          <For each={visible_items()}>{(props, i) =>

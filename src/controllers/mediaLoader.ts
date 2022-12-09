@@ -1,14 +1,9 @@
-
-const cache = {};
-let delay = -1;
-let debounce: number;
-
 type getMediaProps<T> = {
 	id: string;
 	construct: (
 		onLoad: () => void,
-		onError: () => void,
-		onAbort: () => void
+		// onError: () => void,
+		// onAbort: () => void,
 	) => T;
 	cleanup: (media: mediaType<T>) => void;
 }
@@ -22,7 +17,21 @@ type mediaType<T> = T & {
 	cleanup: (media: mediaType<T>) => void;
 };
 
+const cache = {};
+let delay = -1;
+let debounce: number;
 let loading_count = 0;
+
+function delayed(fn) {
+	if (delay < 0)
+		fn()
+	else
+		setTimeout(() => fn(), delay);
+
+	delay++;
+	clearTimeout(debounce);
+	debounce = setTimeout(() => delay = -1);
+}
 
 export function getMedia<T>({ id, construct, cleanup }: getMediaProps<T>): getMediaReturn<T> {
 
@@ -44,46 +53,33 @@ export function getMedia<T>({ id, construct, cleanup }: getMediaProps<T>): getMe
 			return;
 		}
 
-		function _resolve(media) {
-			if (delay < 0)
-				resolve(media)
-			else
-				setTimeout(() => resolve(media), delay);
-
-			delay++;
-			clearTimeout(debounce);
-			debounce = setTimeout(() => delay = -1);
+		if (cache[id]) {
+			const media = cache[id] as mediaType<T>;
+			media.cached = true;
+			delayed(() => resolve(media));
+			// resolve(media);
+			return;
 		}
 
-		function onLoad() {
-			onLoadEnd(media);
-			_resolve(media);
-		}
-
-		function onError() {
-			// console.warn("onError!", filename(media.id));
-		}
-
-		function onAbort() {
-			// console.warn("onAbort!", filename(media.id));
-		}
-
-		const media = (cache[id] ?? Object.assign(
-			construct(onLoad, onError, onAbort), {
+		// delayed(() => {
+		const media = Object.assign(
+			construct(onLoad), {
 			id,
 			cleanup,
 			cached: false,
 			loaded: false,
-		})) as mediaType<T>
+		}) as mediaType<T>
 
 		cache[id] = media;
 
-		if (media.loaded) {
-			media.cached = true;
-			_resolve(media);
-		} else {
-			onLoadStart(media);
+		function onLoad() {
+			onLoadEnd(media);
+			delayed(() => resolve(media));
+			// resolve(media);
 		}
+
+		onLoadStart(media);
+		// })
 	});
 }
 
