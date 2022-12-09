@@ -1,7 +1,7 @@
 import Element from "./Element";
-import images from "../compiled/imagesImports.js";
+// import images from "../compiled/imagesImports.js";
 
-const data = { images };
+const data = { images: [] };
 // console.log(images);
 const List = (props) => {
 

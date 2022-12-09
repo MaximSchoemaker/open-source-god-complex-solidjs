@@ -1,25 +1,58 @@
-import { createEffect, createMemo, createRenderEffect, createResource, createSignal, onCleanup, Show, Suspense, untrack } from "solid-js";
+import { createEffect, createRenderEffect, createResource, createSignal, onCleanup, untrack } from "solid-js";
 import { getImage, cancelImage } from "../controllers/imageLoader";
 
-const ImagePreview = (props) => {
-   let a_ref;
+// window.oncontextmenu = function (event) {
+//    event.preventDefault();
+//    event.stopPropagation();
+//    return false;
+// };
+
+type mipmapType = {
+   width: number;
+   height: number;
+   src: string;
+}
+
+type ImagePreviewProps = {
+   mipmaps: mipmapType[];
+   src: string;
+   filename: string;
+   item_index: number;
+   background_color: string;
+
+   cols: () => number;
+   item_x: () => number;
+   item_y: () => number;
+   item_size: () => number;
+}
+
+const ImagePreview = (props: ImagePreviewProps) => {
+   let a_ref: HTMLAnchorElement | undefined;
 
    const [mipmap_index, set_mipmap_index] = createSignal(0);
    const [hovering, set_hovering] = createSignal(false);
    const [loading, set_loading] = createSignal(false);
+   const [appear_ended, set_appear_ended] = createSignal(false);
 
-   const alway_show = () => props.cols() == 1;
+   const alway_show = () => false; //props.cols() == 1;
+   const should_appear = () => !(image().cached || loaded_before)
+   const should_appear_animation = () => props.cols() > 1;
+   const appear_animation = () => !should_appear() ? ""
+      : should_appear_animation() ? "scale-fade-in" : "fade-in"
+
    const transform = (() => `translate(${props.item_x()}px, ${props.item_y()}px)`);
 
-   const mipmap = () => props.mipmaps.at(mipmap_index());
+   const mipmap = () => props.mipmaps.at(appear_ended()
+      ? mipmap_index()
+      : mipmap_index() - 1
+   );
 
-   const src = () => !props.mipmaps.length
-      ? props.src
-      : mipmap().src
+   const src = () => mipmap()?.src ?? props.src;
 
-   const dimensions = () => !props.mipmaps.length
-      ? { width: 1080, height: 1080 }
-      : { width: mipmap().width, height: mipmap().height }
+   const dimensions = () => ({
+      width: mipmap()?.width ?? 1080,
+      height: mipmap()?.height ?? 1080
+   })
 
    // const scale = createMemo(() => Math.pow(
    //    1 - (Math.cos(
@@ -38,29 +71,38 @@ const ImagePreview = (props) => {
 
    onCleanup(() => cancelImage(src()));
 
-   const [image] = createResource<HTMLImageElement>(src, getImage);
+   const [image] = createResource(src, getImage);
 
    createEffect(() => {
-      const item_size = props.item_size();
-      let new_mipmap_index = props.mipmaps.findIndex(({ width, height }) => width >= item_size && height >= item_size);
+      const scale = window.devicePixelRatio;
+      const item_physical_size = props.item_size() * scale;
+
+      let new_mipmap_index = props.mipmaps.map((mipmap, i) =>
+         ({ ...mipmap, i, dist: Math.min(Math.abs(mipmap.width - item_physical_size), Math.abs(mipmap.width - item_physical_size)) })
+      ).reduce((min, mipmap) => min
+         ? mipmap.dist < min.dist ? mipmap : min
+         : mipmap).i;
+
       set_mipmap_index(new_mipmap_index);
    });
 
+
    let loaded_before = false;
    createRenderEffect(() => {
-      // image.loading && console.log("loading...", src());
-      image.error && console.log("error!", src());
+      // image.error && console.log("error!", src());
       setTimeout(() => set_loading(image.loading))
 
       if (!image.loading) {
-         image().className = image().cached || loaded_before
-            ? ""
-            : alway_show() ? "fade-in" : "scale-fade-in"
+         const _appear_animation = untrack(appear_animation);
+         image().className = _appear_animation;
+         if (_appear_animation === "")
+            set_appear_ended(true);
+         image().onanimationend = () => set_appear_ended(true);
 
-         if (image().naturalWidth * 0.5 < props.item_size() || image().naturalHeight * 0.5 < props.item_size())
-            image().style.setProperty("image-rendering", "pixelated");
-         else
-            image().style.removeProperty("image-rendering");
+         // if (image().naturalWidth * 0.5 < props.item_size() || image().naturalHeight * 0.5 < props.item_size())
+         //    image().style.setProperty("image-rendering", "pixelated");
+         // else
+         //    image().style.removeProperty("image-rendering");
 
          if (image().src)
             loaded_before = true;
@@ -80,14 +122,8 @@ const ImagePreview = (props) => {
          onpointerover={({ pointerType }) => pointerType === "mouse" && set_hovering(true)}
          onpointerout={({ pointerType }) => pointerType === "mouse" && set_hovering(false)}
          tabindex={props.item_index.toString()}
-         onfocus={() => a_ref.focus({ preventScroll: true })}
+         onfocus={() => a_ref!.focus({ preventScroll: true })}
       >
-         <div
-            class={`${!alway_show() ? "fade-in" : ""} image-preview`}
-         >
-            {image.error && "error!"}
-         </div>
-
          {image()}
 
          <div
@@ -101,14 +137,14 @@ const ImagePreview = (props) => {
                style={{ position: "sticky", top: `calc(var(--header-height) - ${props.item_y()}px)`, left: 0 }}
             // href={`/media/${props.id}`}
             >
-               {props.filename.split("__BS__").at(-1)}
+               {props.filename}
             </a>
 
             <span
                class="label"
                style={{ position: "sticky", bottom: `${props.item_y()}px`, left: 0 }}
             >
-               {dimensions().width}x{dimensions().height}
+               {image()?.naturalWidth ?? dimensions().width}x{image()?.naturalHeight ?? dimensions().height} {appear_ended().toString()}
             </span>
          </div>
 

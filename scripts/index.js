@@ -1,7 +1,7 @@
 import PATH from 'path';
 import fs from 'fs';
 
-import Crawl, { generateItem } from "./crawl.js";
+import Crawl, { generateItem } from "./shared/crawl.js";
 import Import from "./shared/import.js";
 import { ask, formatBytes, exists, ensureDir } from "./shared/utils.js";
 
@@ -71,7 +71,8 @@ async function runIndex(path, meta_sizes) {
             const mipmap_path_src = mipmap_path.replace("public\\", "\\");
             return { width, height, src: mipmap_path_src };
          })
-      )).filter(i => i != null);
+      )).filter(i => i != null)
+         .concat({ width: 1080, height: 1080, src: item.src })
 
       item.mipmaps = mipmaps;
 

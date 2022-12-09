@@ -3,7 +3,6 @@ import { createEffect, createRenderEffect, createSignal, For, createMemo, untrac
 import Element from "./Element";
 
 import media from "../compiled/media.json";
-import { isServer, useAssets } from "solid-js/web";
 
 const data = {
    media,
@@ -233,7 +232,7 @@ const Grid = (props) => {
    let first_time = true;
    function onResizeEl(evt) {
       set_el_top(el.offsetTop);
-      set_el_width(el.clientWidth)
+      set_el_width(el.clientWidth);
 
       if (first_time)
          restoreScrollY();
@@ -260,6 +259,11 @@ const Grid = (props) => {
          }}
          ref={bind}
       >
+         <div class="grid-header">
+            {/* {item_size()} {el_width()}
+            <span>{window.devicePixelRatio}</span> */}
+         </div>
+
          <For each={visible_items()}>{(props, i) =>
             <Element {...props}
                item_size={item_size}
@@ -271,6 +275,8 @@ const Grid = (props) => {
             // show={show(props.index)}
             />
          }</For>
+
+
          <div class="grid-footer">
             <div class="button" onClick={() => changeCols(cols() + 1)}>-</div>
             <div class="button" onClick={() => changeCols(cols() - 1)}>+</div>
