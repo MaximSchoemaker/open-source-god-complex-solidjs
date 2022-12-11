@@ -5,7 +5,8 @@ await Mipmap();
 console.log("MIPMAPPING DONE!")
 
 async function Mipmap() {
-   const path = "public\\archive";
+   // const path = "public\\archive";
+   const path = "public\\dropbox";
 
    const profile = { properties: { isDir: false } };
    const options = { ignore: ["\\_meta\\"] };
@@ -19,6 +20,7 @@ async function Mipmap() {
       { width: 8, height: 8 },
       { width: 4, height: 4 },
       { width: 2, height: 2 },
+      { width: 1, height: 1 },
    ]
    const override = false;
    const ask = { compile: false, run: true };
@@ -35,6 +37,20 @@ async function Mipmap() {
                '-y',
                "-i", item.path,
                "-vframes", "1",
+               target_path
+            ]
+         }
+      },
+
+      {
+         profile: { properties: { extension: ".webp" } },
+         action: {
+            kind: "ffmpeg",
+            override,
+            get_target_path: (item) => PATH.join(item.directory, "_meta", `${item.filename}.jpg`),
+            get_ffmpeg_args: (item, target_path) => [
+               '-y',
+               "-i", item.path,
                target_path
             ]
          }

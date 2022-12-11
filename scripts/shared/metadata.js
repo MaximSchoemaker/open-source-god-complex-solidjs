@@ -17,14 +17,15 @@ const sizeOfPromise = promisify(sizeOf);
 export default async function metadata(source_path, target_path) {
 
    let prev_metadata = {};
-   // try {
-   //    prev_metadata = await exists(target_path)
-   //       ? JSON.parse(await fs.promises.readFile(target_path))
-   //       : {}
-   // } catch (e) {
-   //    console.error(target_path, e);
-   //    prev_metadata = {};
-   // }
+   try {
+      prev_metadata = await exists(target_path)
+         ? JSON.parse(await fs.promises.readFile(target_path))
+         : {}
+   } catch (err) {
+      console.error("\nerror!", target_path);
+      console.error(err);
+      prev_metadata = {};
+   }
 
    const [
       colors,

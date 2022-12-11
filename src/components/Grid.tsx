@@ -43,16 +43,18 @@ const Grid = (props) => {
    const item_size = () => el_width() / cols() - gap() * ((cols() - 1) / cols());
    const grid_screen_y = () => el_top() - scroll_y();
 
-   const buffer_zone = window.innerHeight / 4;
+   const buffer_zone = window.innerHeight;
    const buffer_top = createMemo(() => Math.round(Math.max(0, Math.min(untrack(grid_height),
       -grid_screen_y()
-      + (buffer_scroll_vel() > 0 ? 0 : Math.min(buffer_scroll_vel() * 2, -buffer_zone))
-      // + item_size()
+      + (buffer_scroll_vel() >= 0 ? 0 : Math.min(buffer_scroll_vel() * 2, -buffer_zone))
+
+      // + item_size() * 2
    ))));
    const buffer_bottom = createMemo(() => Math.round(Math.max(0, Math.min(untrack(grid_height),
       -grid_screen_y() + window.innerHeight
-      + (buffer_scroll_vel() < 0 ? 0 : Math.max(buffer_scroll_vel() * 2, buffer_zone))
-      // - item_size()
+      + (buffer_scroll_vel() <= 0 ? 0 : Math.max(buffer_scroll_vel() * 2, buffer_zone))
+
+      // - item_size() * 2
    ))));
 
    // const buffer_top_i = createMemo(() => Math.max(0, Math.floor(buffer_top() / (untrack(item_size) + gap())) * untrack(cols)));
@@ -199,15 +201,15 @@ const Grid = (props) => {
       prev_scroll_y = new_scroll_y;
 
       const new_buffer_scroll_vel = Math.abs(scroll_vel) < window.innerHeight * 5
-         ? scroll_vel : Math.sign(scroll_vel)
+         ? scroll_vel : 0;
       set_buffer_scroll_vel(new_buffer_scroll_vel);
    }
 
-   createEffect(() => {
-      clearTimeout(debounce);
-      if (buffer_scroll_vel() != 0)
-         debounce = setTimeout(() => set_buffer_scroll_vel(0), 1000);
-   });
+   // createEffect(() => {
+   //    clearTimeout(debounce);
+   //    if (buffer_scroll_vel() != 0)
+   //       debounce = setTimeout(() => set_buffer_scroll_vel(0), 1000);
+   // });
 
    function restoreScrollY() {
       const saved_scroll_y = Number.parseFloat(localStorage.getItem("scroll-y") ?? "0");
@@ -258,7 +260,7 @@ const Grid = (props) => {
          <div class="grid-header">
             {/* {item_size()} {el_width()}
             <span>{window.devicePixelRatio}</span> */}
-            {visible_items().length}
+            {/* {visible_items().length} */}
          </div>
 
          <For each={visible_items()}>{(props, i) =>

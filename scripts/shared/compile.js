@@ -92,6 +92,11 @@ async function needsCompiling(item, action, target_path, should_log) {
    const { override } = action;
    const { metadata: { mtime, size } } = item;
 
+   if (size == 0) {
+      console.log(`! source corrupted: ${item.path}`)
+      return false;
+   }
+
    let target_metadata =
       await exists(target_path) &&
       await fs.promises.lstat(target_path);

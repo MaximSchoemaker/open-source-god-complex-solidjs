@@ -26,7 +26,7 @@ function delayed(fn) {
 	if (delay < 0)
 		fn()
 	else
-		setTimeout(() => fn(), delay);
+		setTimeout(fn, Math.floor(delay * 0.01));
 
 	delay++;
 	clearTimeout(debounce);
@@ -48,15 +48,16 @@ export function getMedia<T>({ id, construct, cleanup }: getMediaProps<T>): getMe
 	}
 
 	return new Promise((resolve, reject) => {
-		if (!id) {
-			reject();
-			return;
-		}
+		// if (!id || id === "") {
+		// 	reject();
+		// 	return;
+		// }
 
 		if (cache[id]) {
 			const media = cache[id] as mediaType<T>;
 			media.cached = true;
-			delayed(() => resolve(media));
+			// delayed(() => resolve(media));
+			setTimeout(() => resolve(media));
 			// resolve(media);
 			return;
 		}
@@ -74,8 +75,8 @@ export function getMedia<T>({ id, construct, cleanup }: getMediaProps<T>): getMe
 
 		function onLoad() {
 			onLoadEnd(media);
-			delayed(() => resolve(media));
-			// resolve(media);
+			// delayed(() => resolve(media));
+			resolve(media);
 		}
 
 		onLoadStart(media);

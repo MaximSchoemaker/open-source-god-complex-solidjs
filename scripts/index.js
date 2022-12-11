@@ -1,5 +1,8 @@
 import PATH from 'path';
-import fs from 'fs';
+// import fs from 'fs';
+
+import fs from 'graceful-fs';
+// gracefulFs.gracefulify(fs);
 
 import Crawl, { generateItem } from "./shared/crawl.js";
 import Import from "./shared/import.js";
@@ -9,7 +12,8 @@ await Index();
 console.log("INDEXING DONE!")
 
 async function Index() {
-   const index_path = "public\\archive";
+   // const index_path = "public\\archive";
+   const index_path = "public\\dropbox";
 
    const meta_sizes = [
       { width: 2, height: 2 },
@@ -55,14 +59,28 @@ async function runIndex(path, meta_sizes) {
    const weight = (i) => i.extension == ".mp4" ? 1 : 0;
    items.sort((i1, i2) => weight(i2) - weight(i1))
 
-   const srced_items = items.map(item => {
+   const srced_items = (await Promise.all(items.map(async item => {
       item.src = item.path.replace("public\\", "\\");
+      const metadata_path = PATH.join(item.directory, "_meta", `${item.filename}.json`);
+      if (await exists(metadata_path)) {
+         try {
+            const metadata = JSON.parse(fs.readFileSync(metadata_path));
+            item.metadata = { ...item.metadata, ...metadata };
+         } catch (err) {
+            console.error(metadata_path);
+            console.error(err);
+         }
+      }
       return item;
-   });
+   })))
+   // .filter(item => item.metadata.colors);
 
    const indexed_items = await Promise.all(srced_items.map(async (item, i) => {
       const mipmaps = (await Promise.all(
          meta_sizes.map(async ({ width, height }) => {
+            if (item.metadata.size.width < width || item.metadata.size.heigth < height)
+               return null;
+
             const mipmap_extension = mipmapExtension(item);
             const mipmap_path = PATH.join(item.directory, "_meta", `${item.filename} ${width}x${height}${mipmap_extension}`);
             if (!await exists(mipmap_path))

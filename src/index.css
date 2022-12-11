@@ -201,7 +201,13 @@ li {
 .image-preview-container {
   top: 0;
   left: 0;
-  position: absolute;
+  /* position: absolute; */
+
+  z-index: 2;
+
+  position: fixed;
+  width: 100%;
+  height: 100vh;
 
   /* width: 1000px; */
   aspect-ratio: 1 / 1;
@@ -212,16 +218,22 @@ li {
 }
 
 .image-preview {
+  width: 1024px;
+  height: 1024px;
+  /* background-color: var(--accent2); */
   position: absolute;
-  width: 100%;
-  height: 100%;
-  background-color: black;
-  /* background-color: rgba(125, 0, 255, 0.25); */
-  /* overflow: hidden; */
+  display: block;
+  object-fit: cover;
+  /* aspect-ratio: 1 / 1; */
+  transform-origin: left top;
+  /* background-color: white; */
+  background-size: cover;
+  background-position: center;
 }
 
-.image-preview-container img {
-  position: absolute;
+.image-preview img {
+  /* background-color: var(--accent2); */
+  /* position: absolute; */
   display: block;
   object-fit: cover;
 
@@ -229,8 +241,15 @@ li {
   overflow-wrap: break-word;
 
   min-width: 0;
-  width: 100%;
-  height: 100%;
+
+  /* width: 50%;
+  height: 50%; */
+  --border: 0px;
+  width: calc(100% - calc(var(--border) * 2));
+  height: calc(100% - calc(var(--border) * 2));
+  margin: var(--border);
+
+  background-color: black;
 }
 
 .scale-fade-in {
@@ -330,34 +349,34 @@ li {
 /* .image-preview-container:hover .image-preview-overlay {
   opacity: 1;
 } */
-.image-preview-overlay.show,
+/* .image-preview-overlay.show,
 .image-preview-overlay.always-show {
   opacity: 1;
   pointer-events: all;
-}
+} */
 
 .image-preview-overlay:not(.always-show) {
   outline: none;
 }
 
-.image-preview-container:hover .image-preview-overlay  {
+/* .image-preview-container:hover .image-preview-overlay  {
   transition: opacity 0.5s;
   opacity: 1;
-}
+} */
 
 .image-preview-overlay {
   height: 100%;
-  position: absolute;
+  /* position: absolute; */
 
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: flex-start;
 
-  pointer-events: none;
-  opacity: 0;
+  /* pointer-events: none; */
+  /* opacity: 0; */
 
-  max-width: calc(var(--item-width) - var(--gap));
+  /* max-width: calc(var(--item-width) - var(--gap)); */
 }
 
 .image-preview-dimensions {

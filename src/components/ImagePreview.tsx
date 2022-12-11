@@ -24,7 +24,10 @@ type ImagePreviewProps = {
    item_x: () => number;
    item_y: () => number;
    item_size: () => number;
+   item_screen_y: () => number;
 }
+
+const encodeURL = (url) => url.replaceAll("#", "%23");
 
 const ImagePreview = (props: ImagePreviewProps) => {
    let a_ref: HTMLAnchorElement | undefined;
@@ -41,6 +44,7 @@ const ImagePreview = (props: ImagePreviewProps) => {
    const appear_animation = () => !should_appear() ? ""
       : should_appear_animation() ? "fade-in" : "fade-in"
 
+   const transformImage = (() => `translate(${props.item_x()}px, ${props.item_y()}px) scale(${props.item_size() / 1024})`);
    const transform = (() => `translate(${props.item_x()}px, ${props.item_y()}px)`);
 
    const mipmap = () => props.mipmaps.at(
@@ -50,7 +54,6 @@ const ImagePreview = (props: ImagePreviewProps) => {
       //    : mipmap_index() - 1
    );
 
-   const src = () => mipmap()?.src ?? props.src;
 
    const dimensions = () => ({
       width: mipmap()?.width ?? 1080,
@@ -73,6 +76,15 @@ const ImagePreview = (props: ImagePreviewProps) => {
    // }));
 
    onCleanup(() => cancelImage(src()));
+
+   const in_screen = () => props.item_screen_y() >= -props.item_size() && props.item_screen_y() < window.innerHeight;
+
+   const src = () => //in_screen()
+      encodeURL(mipmap()?.src ?? props.src)
+   // : "";
+
+   // const fetch_priority = () => in_screen() ? "high" : "auto";
+   // const resource_fetcher = () => ({ src: src(), fetch_priority: "high" })
 
    const [image] = createResource(src, getImage);
 
@@ -97,21 +109,29 @@ const ImagePreview = (props: ImagePreviewProps) => {
       const loading = image.loading;
       const _image = untrack(image);
 
+      // if (!_image)
+      //    return;
+
       if (!loading && prev_loading) {
          // const _loaded_before = untrack(loaded_before);
 
          // _image.className = untrack(appear_animation);
-         _image.className = !should_appear_animation() || loaded_before || _image.cached ? "" : "fade-in";
-         set_appear_ended(loaded_before || _image.cached);
+         const should_appear = untrack(should_appear_animation) && !loaded_before
+         //  && !_image.cached;
+         _image.className = should_appear ? "fade-in" : "";
+         // _image.style.setProperty("animation-delay", untrack(props.item_screen_y) + "ms")
+
+         set_appear_ended(!should_appear);
 
          // if (!untrack(should_appear))
          //    set_appear_ended(true);
          // _image.onanimationend = () => set_appear_ended(true);
 
-         // if (_image.naturalWidth * 0.5 < props.item_size() || _image.naturalHeight * 0.5 < props.item_size())
-         //    _image.style.setProperty("image-rendering", "pixelated");
-         // else
-         //    _image.style.removeProperty("image-rendering");
+         if (props.metadata.size.width < 100 || props.metadata.size.height < 100)
+            _image.style.setProperty("image-rendering", "pixelated");
+         else
+            _image.style.removeProperty("image-rendering");
+
          // console.log(loaded_before);
       }
 
@@ -127,72 +147,94 @@ const ImagePreview = (props: ImagePreviewProps) => {
       return loading;
    }, image.loading);
 
-   return (
-      <div
-         class={`image-preview-container ${!should_appear_animation() || appear_ended() ? "" : "fade-in"}`}
-         style={{
-            transform: transform(),
-            width: props.item_size() + "px",
-            "--item_index": props.item_index,
-            "background-color": "transparent",
-            "background-image": image.loading && `url("${props.mipmaps[0].src.replaceAll("\\", "/")}")`,
-            "background-size": "cover",
-         }}
-         // onpointerover={({ pointerType }) => pointerType === "mouse" && set_hovering(true)}
-         // onpointerout={({ pointerType }) => pointerType === "mouse" && set_hovering(false)}
-         onmouseover={() => set_hovering(true)}
-         onmouseout={() => set_hovering(false)}
-         tabindex={props.item_index.toString()}
-         onfocus={() => a_ref?.focus({ preventScroll: true })}
-      >
-         {image()}
+   const background_color = props.metadata.colors
+      ? `rgba(${props.metadata.colors.at(0)._rgb.join(",")})`
+      : `rgb(125, 0, 255)`;
+   // const background_color = `rgb(${props.metadata.palette.DarkMuted.rgb.join(",")})`;
 
-         <Show when={hovering()}>
-            <ImagePreviewOverlay
-               hovering={hovering}
-               always_show={always_show}
-               a_ref={a_ref}
-               item_y={props.item_y}
-               item_x={props.item_x}
-               image={image}
-               dimensions={dimensions}
-               loading={loading}
-               appear_ended={appear_ended}
-               filename={props.filename}
-            />
-         </Show>
-         {/* <div class={`loading-animation ${loading() ? "active" : ""}`} /> */}
-      </div>
-   )
-}
-
-function ImagePreviewOverlay(props) {
    return (
       <>
-         <div
-            class={`image-preview-overlay fade-in ${props.always_show() ? "always-show" : ""}`}
-         // onblur={() => set_hovering(false)}
-         // onfocus={() => set_hovering(true)}
-         >
-            <a
-               class="label"
-               ref={props.a_ref}
-               style={{ position: "sticky", top: `calc(var(--header-height) - ${props.item_y()}px)`, left: 0 }}
-            // href={`/media/${props.id}`}
-            >
-               {props.filename}
-            </a>
+         {/* <img
+            class={`image-preview ${image()?.className}`}
+            src={image()?.src ??
+               // props.mipmaps[0].src.replaceAll("\\", "/")
+               "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
+            }
+            style={{
+               transform: transformImage(),
+               "--item_index": props.item_index,
+               "background-color": appear_ended() ? "transparent" : "rgb(125,0,255)",
+               // "background-image": `url("${props.mipmaps[0].src.replaceAll("\\", "/")}")`,
+               "background-size": "cover",
+            }}
+            onmouseenter={() => set_hovering(true)}
+            onmouseout={() => set_hovering(false)}
+         /> */}
 
-            <span
-               class="label"
-               style={{ position: "sticky", bottom: `${props.item_y()}px`, left: 0 }}
-            >
-               {props.image()?.naturalWidth ?? props.dimensions().width}x{props.image()?.naturalHeight ?? props.dimensions().height} {props.appear_ended().toString()}
-            </span>
+         <div
+            class={`image-preview ${!should_appear_animation() || appear_ended() ? "" : "fade-in"}`}
+            style={{
+               transform: transformImage(),
+               "--item_index": props.item_index,
+               // "background-color": appear_ended() ? "transparent" : background_color
+               "background-color": background_color,
+               // "background-image": appear_ended() ? "" : `url("${props.mipmaps[0].src.replaceAll("\\", "/")}")`,
+               // "animation-delay": props.item_screen_y() + "ms",
+               // "animation-fill-mode": "backwards",
+            }}
+            onmouseenter={() => set_hovering(true)}
+            onmouseleave={() => set_hovering(false)}
+         >
+            {image()}
          </div>
 
+         <Show when={hovering()}>
+            <div
+               class={`image-preview-container /*fade-in*/`}
+               style={{
+                  // transform: transform(),
+                  // width: props.item_size() + "px",
+                  "--item_index": props.item_index,
+                  "background-color": "transparent",
+                  "pointer-events": "none",
+               }}
+            // onpointerover={(e) => e.target.releasePointerCapture(e.pointerId)}
+            // onmouseout={() => set_hovering(false)}
+            // onmouseover={() => set_hovering(true)}
+            >
+
+               <div
+                  class={`image-preview-overlay ${always_show() ? "always-show" : ""}`}
+               // onblur={() => set_hovering(false)}
+               // onfocus={() => set_hovering(true)}
+               >
+                  <a
+                     class="label"
+                     ref={a_ref}
+                  // style={{ position: "absolute", top: 0 }}
+                  // style={{ position: "sticky", top: `calc(var(--header-height) - ${props.item_y()}px)`, left: 0 }}
+                  // href={`/media/${props.id}`}
+                  >
+                     {props.filename}
+                  </a>
+
+                  <span
+                     class="label"
+                  // style={{ position: "absolute", bottom: 0 }}
+                  // style={{ position: "sticky", bottom: `${props.item_y()}px`, left: 0 }}
+                  >
+                     {image()?.naturalWidth ?? dimensions().width}x{image()?.naturalHeight ?? dimensions().height}<br />
+                     {props.metadata.size.width}x{props.metadata.size.height}<br />
+                     {/* {in_screen()} <br /> */}
+                     {appear_ended().toString()}
+                  </span>
+               </div>
+
+               {/* <div class={`loading-animation ${loading() ? "active" : ""}`} /> */}
+            </div>
+         </Show>
       </>
-   );
+   )
 }
 
 export default ImagePreview;

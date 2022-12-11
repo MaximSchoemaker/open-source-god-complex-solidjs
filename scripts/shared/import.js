@@ -75,13 +75,13 @@ async function executeAction(item, target_path, action) {
             const args = get_ffmpeg_args(item, target_path);
             return await ffmpegItem(item.path, target_path, args);
          case "metadata":
-            const { get_source_path } = action;
-            const source_path = get_source_path(item);
-            await metadataItem(source_path, target_path);
+            // const { get_source_path } = action;
+            // const source_path = get_source_path(item);
+            await metadataItem(item.path, target_path);
             return true;
       }
    } catch (e) {
-      console.error("error!", item.path, ">", target_path, "\n", ">", e);
+      console.error("\nerror!", item.path, ">", target_path, "\n", ">", e);
    }
    return false;
 }

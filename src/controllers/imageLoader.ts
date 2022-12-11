@@ -1,5 +1,10 @@
 import { getMedia, cancelMedia } from "./mediaLoader";
 
+// type getImageProp = {
+//   src: string;
+//   fetch_priority: string;
+// }
+
 export function getImage(src: string) {
   return getMedia<HTMLImageElement>({
     id: src,

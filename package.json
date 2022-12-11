@@ -4,12 +4,13 @@
   "description": "",
   "type": "module",
   "scripts": {
+    "import": "node -r dotenv/config ./scripts/import.js",
     "copy": "node -r dotenv/config ./scripts/copy.js",
     "rename": "node -r dotenv/config ./scripts/rename.js",
     "archive": "node -r dotenv/config ./scripts/archive.js",
     "mipmap": "node -r dotenv/config ./scripts/mipmap.js",
+    "meta": "node -r dotenv/config ./scripts/meta.js",
     "index": "node -r dotenv/config ./scripts/index.js",
-    
     "start": "vite",
     "dev": "vite --host",
     "build": "vite build",
@@ -27,6 +28,7 @@
     "vite-plugin-solid": "^2.4.0"
   },
   "dependencies": {
+    "graceful-fs": "^4.2.10",
     "solid-js": "^1.6.3"
   }
 }

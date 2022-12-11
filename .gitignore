@@ -5,5 +5,6 @@ dist
 .env.production
 
 public/archive
+public/dropbox
 src/compiled
 content
