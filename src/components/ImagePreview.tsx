@@ -123,6 +123,8 @@ const ImagePreview = (props: ImagePreviewProps) => {
 
          set_appear_ended(!should_appear);
 
+         // _image.style.setProperty("background-color", background_color);
+
          // if (!untrack(should_appear))
          //    set_appear_ended(true);
          // _image.onanimationend = () => set_appear_ended(true);
@@ -154,39 +156,48 @@ const ImagePreview = (props: ImagePreviewProps) => {
 
    return (
       <>
-         {/* <img
-            class={`image-preview ${image()?.className}`}
-            src={image()?.src ??
-               // props.mipmaps[0].src.replaceAll("\\", "/")
-               "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
-            }
-            style={{
-               transform: transformImage(),
-               "--item_index": props.item_index,
-               "background-color": appear_ended() ? "transparent" : "rgb(125,0,255)",
-               // "background-image": `url("${props.mipmaps[0].src.replaceAll("\\", "/")}")`,
-               "background-size": "cover",
-            }}
-            onmouseenter={() => set_hovering(true)}
-            onmouseout={() => set_hovering(false)}
-         /> */}
 
          <div
             class={`image-preview ${!should_appear_animation() || appear_ended() ? "" : "fade-in"}`}
             style={{
                transform: transformImage(),
-               "--item_index": props.item_index,
                // "background-color": appear_ended() ? "transparent" : background_color
-               "background-color": background_color,
-               // "background-image": appear_ended() ? "" : `url("${props.mipmaps[0].src.replaceAll("\\", "/")}")`,
-               // "animation-delay": props.item_screen_y() + "ms",
-               // "animation-fill-mode": "backwards",
+               "--bg-color": background_color,
+               "background-color": !should_appear_animation() || appear_ended() ? "transparent" : background_color,
             }}
             onmouseenter={() => set_hovering(true)}
             onmouseleave={() => set_hovering(false)}
          >
             {image()}
          </div>
+
+         {/* <div
+            class={`image-preview`}
+            style={{ transform: transformImage(), }}
+            onmouseenter={() => set_hovering(true)}
+            onmouseleave={() => set_hovering(false)}
+         >
+            {image()}
+         </div> */}
+
+         {/* <Show when={image()} >
+            <img
+               class={`image-preview ${image()?.className}`}
+               src={image()?.src ??
+                  // props.mipmaps[0].src.replaceAll("\\", "/")
+                  "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
+               }
+               style={{
+                  transform: transformImage(),
+                  "--item_index": props.item_index,
+                  "background-color": background_color,
+                  // "background-image": `url("${props.mipmaps[0].src.replaceAll("\\", "/")}")`,
+                  "background-size": "cover",
+               }}
+               onmouseenter={() => set_hovering(true)}
+               onmouseout={() => set_hovering(false)}
+            />
+         </Show> */}
 
          <Show when={hovering()}>
             <div

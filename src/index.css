@@ -264,12 +264,26 @@ li {
   animation: fade-in 0.2s;
 }
 
+.color-fade-in {
+  animation: color-fade-in 0.2s;
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
   }
   to {
     opacity: 1;
+  }
+}
+
+
+@keyframes color-fade-in {
+  from {
+    background-color: transparent;
+  }
+  to {
+    background-color: var(--bg-color);
   }
 }
 
